@@ -12,6 +12,8 @@
   "description": "",
   "dependencies": {
     "express": "^4.21.2",
-    "nanoid": "^5.0.9"
+    "express-handlebars": "^8.0.1",
+    "nanoid": "^5.0.9",
+    "socket.io": "^4.8.1"
   }
 }

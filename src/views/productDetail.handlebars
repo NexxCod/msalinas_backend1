@@ -1,0 +1,13 @@
+<div>
+    <h1>{{product.title}}</h1>
+    <p><strong>Descripción:</strong> {{product.description}}</p>
+    <p><strong>Precio:</strong> ${{product.price}}</p>
+    <p><strong>Stock:</strong> {{product.stock}}</p>
+    <p><strong>Categoría:</strong> {{product.category}}</p>
+
+    <button class="add-to-cart" data-id="{{product._id}}">Agregar al carrito</button>
+</div>
+
+<a href="/">Volver a la tienda</a>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/home.js"></script>

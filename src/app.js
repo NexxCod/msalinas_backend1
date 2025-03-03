@@ -19,7 +19,11 @@ const io = new Server(server);
 connectDB();
 
 //handlebars
-app.engine("handlebars", engine());
+app.engine("handlebars", engine({
+    helpers: {
+        multiply: (a, b) => a * b,
+    },
+}));
 app.set("view engine", "handlebars");
 app.set("views", "./src/views");
 
@@ -41,22 +45,34 @@ app.use("/api/cart", cartsRouter)
 
 app.use("/", viewsRouter);
 
-//websockets
+// WebSockets
 io.on("connection", (socket) => {
     console.log("Nuevo cliente conectado");
+
+    // Enviar lista de productos al conectar
+    socket.on("request-products", async () => {
+        const products = await productManager.getProducts({ limit: 10, page: 1 });
+        socket.emit("update-products", products.payload);
+    });
+
+    // Agregar nuevo producto
     socket.on("new-product", async (data) => {
         try {
             const newProduct = await productManager.addProduct(data);
-            io.emit("ProductAdded", newProduct);
+            const updatedProducts = await productManager.getProducts({ limit: 10, page: 1 });
+            io.emit("update-products", updatedProducts.payload);
         } catch (error) {
-            console.log("Error añandiendo el nuevo producto:", error);
+            console.log("Error añadiendo el nuevo producto:", error);
         }
     });
+
+    // Eliminar producto
     socket.on("ProductDeleted", async (id) => {
         try {
-            const deleteProduct = await productManager.deleteProduct(id);
-            if (deleteProduct) {
-                io.emit("ProductRemoved", id); //Se notifica a clientes conectados;
+            const deleted = await productManager.deleteProduct(id);
+            if (deleted) {
+                const updatedProducts = await productManager.getProducts({ limit: 10, page: 1 });
+                io.emit("update-products", updatedProducts.payload);
             } else {
                 console.log(`Producto con ID ${id} no encontrado.`);
             }

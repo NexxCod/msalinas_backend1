@@ -1,17 +1,51 @@
 <div>
-    <h1>Productos Estático</h1>
+    <h1>Productos en Tiempo Real</h1>
 
+    <!-- Formulario para agregar nuevos productos -->
+    <h2>Agregar nuevo producto</h2>
+    <form id="formNewProduct">
+        <input type="text" name="title" placeholder="Título" required>
+        <input type="text" name="description" placeholder="Descripción" required>
+        <input type="text" name="code" placeholder="Código" required>
+        <input type="number" name="price" placeholder="Precio" required>
+        <input type="number" name="stock" placeholder="Stock" required>
+        <input type="text" name="category" placeholder="Categoría" required>
+        <button type="submit">Agregar Producto</button>
+    </form>
+    <div>
+    <a id="btn-view-cart" href="#" class="btn-view-cart" style="display: none;">Ver Carrito</a>
+    </div>
+    <!-- Lista de productos -->
     <h2>Lista de Productos</h2>
-    <div id="productsContainer">
-        {{#each products}}
-            <div class="product-card" id="{{this.id}}">
-                <h3 class="product-title">{{this.title}}</h3>
-                <p class="product-description">{{this.description}}</p>
-                <p class="product-code"><strong>Código:</strong> {{this.code}}</p>
-                <p class="product-price"><strong>Precio:</strong> ${{this.price}}</p>
-                <p class="product-stock"><strong>Stock:</strong> {{this.stock}} disponibles</p>
-                <p class="product-category"><strong>Categoría:</strong> {{this.category}}</p>
-            </div>
-        {{/each}}
+    {{#if products.length}}
+        <div id="productsContainer">
+            {{#each products}}
+                <div class="product-card" id="{{this._id}}">
+                    <h3>{{this.title}}</h3>
+                    <p><strong>Precio:</strong> ${{this.price}}</p>
+                    <p><strong>Stock:</strong> {{this.stock}}</p>
+                    <p><strong>Categoría:</strong> {{this.category}}</p>
+                    <a href="/products/{{this._id}}">Ver detalles</a>
+                    <button class="add-to-cart" data-id="{{this._id}}">Agregar al carrito</button>
+                    <button class="delete-button" data-id="{{this._id}}">Eliminar de DB</button>
+                </div>
+            {{/each}}
+        </div>
+    {{else}}
+        <p>No hay productos disponibles.</p>
+    {{/if}}
+
+    <!-- Paginación -->
+    <div class="pagination">
+        {{#if hasPrevPage}} 
+            <a href="/?page={{prevPage}}&limit=10" class="pagination-link" data-page="{{prevPage}}">Anterior</a> 
+        {{/if}}
+        <span>Página {{currentPage}} de {{totalPages}}</span>
+        {{#if hasNextPage}} 
+            <a href="/?page={{nextPage}}&limit=10" class="pagination-link" data-page="{{nextPage}}">Siguiente</a> 
+        {{/if}}
     </div>
 </div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/home.js"></script>

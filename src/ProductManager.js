@@ -23,7 +23,8 @@ class ProductManager {
             const options = {
                 page: parseInt(page),
                 limit: parseInt(limit),
-                sort: sort ? { price: sort === "asc" ? 1 : -1 } : {}
+                sort: sort ? { price: sort === "asc" ? 1 : -1 } : {},
+                lean: true
             };
 
             const result = await Product.paginate(filter, options);
@@ -48,7 +49,7 @@ class ProductManager {
     // Obtener producto por ID
     async getProductById(id) {
         try {
-            return await Product.findById(id);
+            return await Product.findById(id).lean();
         } catch (error) {
             return null;
         }

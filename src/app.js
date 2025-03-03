@@ -6,11 +6,17 @@ import { Server } from "socket.io";
 import http from "http";
 import viewsRouter from "./routes/views.router.js";
 import { productManager } from "./managers.js";
+import connectDB from "./data/db.js";
+import dotenv from "dotenv";
 
 
+
+dotenv.config();
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+
+connectDB();
 
 //handlebars
 app.engine("handlebars", engine());
@@ -18,7 +24,7 @@ app.set("view engine", "handlebars");
 app.set("views", "./src/views");
 
 //Puerto
-const PORT = 8081;
+const PORT = process.env.PORT || 8080;
 
 //Habilitamos para recibir JSON y peticiones web
 app.use(express.json());

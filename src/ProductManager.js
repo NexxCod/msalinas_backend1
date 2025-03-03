@@ -1,88 +1,96 @@
-import fs from "fs";
-import { nanoid } from "nanoid";
+import Product from "./models/Product.js"
 
 class ProductManager {
-    constructor(pathFile) {
-        this.pathFile = pathFile;
-    }
 
     //getProducts
-    getProducts = async (limit) => {
+    // Obtener productos con paginación, filtros y ordenamiento
+    async getProducts({ limit = 10, page = 1, sort, query, status }) {
         try {
-            //Leemos el contenido del archivo y lo guardamos
-            const data = await fs.promises.readFile(this.pathFile, 'utf-8');
-            const products = JSON.parse(data);
-            return limit ? products.slice(0, limit) : products;
-        } catch (error) {
-            // throw new getSystemErrorMap(`Error al leer el archvio de productos : ${error.message}`)
-            console.log("error")
-        }
+            let filter = {};
+    
+            // Filtrar por categoría si se proporciona
+            if (query) {
+                filter.category = query;
+            }
+    
+            // Filtrar por status solo si está definido en la consulta
+            if (status !== undefined) {
+                filter.status = status === "true"; // Convierte string "true" o "false" en booleano
+            } else {
+                filter.status = true; // Por defecto solo mostrar productos activos
+            }
 
+            const options = {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                sort: sort ? { price: sort === "asc" ? 1 : -1 } : {}
+            };
+
+            const result = await Product.paginate(filter, options);
+            return {
+                status: "success",
+                payload: result.docs,
+                totalPages: result.totalPages,
+                prevPage: result.prevPage,
+                nextPage: result.nextPage,
+                page: result.page,
+                hasPrevPage: result.hasPrevPage,
+                hasNextPage: result.hasNextPage,
+                prevLink: result.hasPrevPage ? `/api/products?page=${result.prevPage}&limit=${limit}` : null,
+                nextLink: result.hasNextPage ? `/api/products?page=${result.nextPage}&limit=${limit}` : null
+            };
+        } catch (error) {
+            throw new Error("Error al obtener productos");
+        }
     }
 
     //getProductById
-
-    getProductById = async (id) => {
-        //Obtengo y almaceno mis productos con método getProducts
-        const products = await this.getProducts();
-        //Busco por id
-        return products.find((product) => product.id === id) || null;
+    // Obtener producto por ID
+    async getProductById(id) {
+        try {
+            return await Product.findById(id);
+        } catch (error) {
+            return null;
+        }
     }
 
 
     //addProduct
+ // Agregar nuevo producto
+ async addProduct({ title, description, code, price, stock, category, thumbnails = [], status = true }) {
+    if (!title || !description || !code || !price || !stock || !category) {
+        throw new Error("Todos los campos son obligatorios excepto thumbnails");
+    }
 
-    addProduct = async ({ title, description, code, price, stock, category, thumbnails = "" }) => {
-        //Revisar campos ingresados
-        if (!title || !description || !code || !price || !stock || !category) {
-            throw new Error("Todos los campos son obligatorios excepto thumbnails")
+    const existingProduct = await Product.findOne({ code });
+    if (existingProduct) {
+        throw new Error("El código del producto ya existe");
+    }
+
+    const newProduct = new Product({ title, description, code, price, stock, category, thumbnails, status });
+    await newProduct.save();
+    return newProduct;
+}
+
+    // Actualizar producto por ID
+    async updateProduct(id, updates) {
+        try {
+            return await Product.findByIdAndUpdate(id, updates, { new: true });
+        } catch (error) {
+            return null;
         }
-        //Obtener productos
-        const products = await this.getProducts();
-        if (products.some((product) => product.code === code)) {
-            throw new Error("El código del producto ya existe");
+    }
+
+
+     // Eliminar producto por ID (marcar status como false en lugar de borrarlo)
+     async deleteProduct(id) {
+        try {
+            const updatedProduct = await Product.findByIdAndUpdate(id, { status: false }, { new: true });
+            return updatedProduct ? true : false;
+        } catch (error) {
+            return null;
         }
-        const newProduct = {
-            id: nanoid(),
-            title,
-            description,
-            code,
-            price,
-            stock,
-            category,
-            status: true,
-            thumbnails,
-        };
-
-        products.push(newProduct);
-        await fs.promises.writeFile(this.pathFile, JSON.stringify(products, null, 2));
-        return newProduct;
     }
-
-    //updateProduct(id, updates)
-    updateProduct = async (id, updates) => {
-        const products = await this.getProducts();
-        const index = products.findIndex((product) => product.id === id);
-        if (index === -1) return null;
-
-        products[index] = {...products[index], ...updates};
-
-        await fs.promises.writeFile(this.pathFile, JSON.stringify(products, null, 2))
-
-        return products[index];
-    }
-    
-    //deleteProductById
-
-    deleteProduct = async (id) => {
-        const products = await this.getProducts();
-        const newProducts = products.filter((product) => product.id !== id);
-        if (products.length === newProducts.length) return null;
-
-        await fs.promises.writeFile(this.pathFile, JSON.stringify(newProducts, null, 2));
-        return true;
-    }
-
 }
 
 export default ProductManager
